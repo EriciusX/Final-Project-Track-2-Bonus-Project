@@ -1,0 +1,18 @@
+{
+  "team_name": "go2_track2_learned_mlp_v7",
+  "track2_option": "leaderboard",
+  "checkpoint_dir": "best_checkpoint",
+  "planner_config": "planner_config.json",
+  "planner_code": "track_bonus/planner.py",
+  "planner_weights": "planner_weights.npz",
+  "high_level_planner_type": "teacher_distilled_mlp",
+  "training_method": {
+    "low_level": "HW1-style Go2 PPO command tracking, high-speed v7 fine-tune; actor policy_obs_key=state, state shape 48, action size 12",
+    "high_level": "Supervised behavior cloning / distillation: a 64x64 MLP maps the official 5D high-level observation to vx, vy, yaw_rate commands using turn-in-apex racing-line teacher labels offline only"
+  },
+  "evaluation_command": "python run_track_bonus.py --checkpoint-dir best_checkpoint --planner-config planner_config.json --output-dir track_eval --entry-name learned_mlp_distill_v7",
+  "official_results_available": true,
+  "track_eval_results": "track_eval/results.json",
+  "status": "complete",
+  "notes": "Final clean MLP runtime does not call the hand-written teacher or racing-line formula. Official local eval: 200 m completed in 67.34 s, no fall, no boundary violation, min boundary margin 0.1906 m."
+}
