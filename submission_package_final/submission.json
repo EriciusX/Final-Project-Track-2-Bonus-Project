@@ -12,6 +12,7 @@
     "high_level": "Supervised behavior cloning / distillation: a 64x64 MLP maps the official 5D high-level observation to vx, vy, yaw_rate commands using turn-in-apex racing-line teacher labels offline only"
   },
   "evaluation_command": "python run_track_bonus.py --checkpoint-dir best_checkpoint --config course_config.json --planner-config planner_config.json --output-dir track_eval --entry-name learned_mlp_distill_v7",
+  "repo_evaluation_command": "python run_track_bonus.py --checkpoint-dir submission_package_final/best_checkpoint --config submission_package_final/course_config.json --planner-config submission_package_final/planner_config.json --output-dir artifacts/repro_from_submission_package --entry-name learned_mlp_distill_v7 --duration-seconds 120 --no-render",
   "official_results_available": true,
   "track_eval_results": "track_eval/results.json",
   "status": "complete",

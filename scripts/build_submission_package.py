@@ -153,6 +153,13 @@ def main() -> None:
             "--config course_config.json --planner-config planner_config.json --output-dir track_eval "
             "--entry-name learned_mlp_distill_v7"
         ),
+        "repo_evaluation_command": (
+            "python run_track_bonus.py --checkpoint-dir submission_package_final/best_checkpoint "
+            "--config submission_package_final/course_config.json "
+            "--planner-config submission_package_final/planner_config.json "
+            "--output-dir artifacts/repro_from_submission_package "
+            "--entry-name learned_mlp_distill_v7 --duration-seconds 120 --no-render"
+        ),
         "official_results_available": official_results_available,
         "track_eval_results": "track_eval/results.json" if official_results_available else None,
         "status": "complete" if official_results_available else "incomplete_missing_official_results",
