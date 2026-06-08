@@ -1,0 +1,161 @@
+{
+  "homework_name": "Final Project Track 2 Bonus: Go2 Low-Level 3.0 mps Bridge Fine-Tune V7",
+  "robot": "Go2",
+  "environment_name": "Go2JoystickFlatTerrain",
+  "framework": "MuJoCo Playground + Brax PPO + MJX",
+  "backend_impl": "jax",
+  "actor_obs_key": "state",
+  "critic_obs_key": "privileged_state",
+  "use_domain_randomization": true,
+  "seed": 41,
+  "control": {
+    "ctrl_dt": 0.02,
+    "sim_dt": 0.004,
+    "action_scale": 0.58,
+    "action_type": "absolute_joint_position_target",
+    "torque_mapping": "position_target_through_pd_actuator"
+  },
+  "course_budget": {
+    "baseline_total_env_steps": 15000000,
+    "leaderboard_max_env_steps": 30000000,
+    "flat_terrain_only": true,
+    "require_colab_gpu_runtime": true
+  },
+  "training_defaults": {
+    "num_envs": 512,
+    "num_eval_envs": 64,
+    "num_evals": 5,
+    "batch_size": 128,
+    "policy_hidden_layer_sizes": [
+      256,
+      256,
+      128
+    ],
+    "value_hidden_layer_sizes": [
+      256,
+      256,
+      128
+    ]
+  },
+  "stage_1": {
+    "name": "stage_1",
+    "num_timesteps": 10000000,
+    "command_range": {
+      "min": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "max": [
+        0.8,
+        0.0,
+        0.0
+      ]
+    },
+    "command_keep_prob": [
+      1.0,
+      0.0,
+      0.0
+    ],
+    "reward_scales": {
+      "action_rate": -0.02,
+      "energy": -0.0015
+    }
+  },
+  "stage_2": {
+    "name": "stage_2_bridge_3p0_finetune_v7",
+    "num_timesteps": 2000000,
+    "command_range": {
+      "min": [
+        2.1,
+        -0.05,
+        -0.45
+      ],
+      "max": [
+        3.0,
+        0.05,
+        0.45
+      ]
+    },
+    "command_keep_prob": [
+      1.0,
+      0.05,
+      0.28
+    ],
+    "student_stage2_goal": {
+      "command_range": {
+        "min": [
+          2.1,
+          -0.05,
+          -0.45
+        ],
+        "max": [
+          3.0,
+          0.05,
+          0.45
+        ]
+      },
+      "command_keep_prob": [
+        1.0,
+        0.05,
+        0.28
+      ]
+    },
+    "reward_scales": {
+      "tracking_lin_vel": 4.6,
+      "tracking_ang_vel": 0.62,
+      "orientation": -8.4,
+      "feet_slip": -0.10,
+      "action_rate": -0.016,
+      "energy": -0.0009
+    },
+    "restore_previous_stage_checkpoint": true
+  },
+  "demo_rollout": {
+    "segment_seconds": 2.5,
+    "segments": [
+      [
+        2.5,
+        0.0,
+        0.0
+      ],
+      [
+        2.8,
+        0.0,
+        0.0
+      ],
+      [
+        3.0,
+        0.0,
+        0.0
+      ],
+      [
+        2.8,
+        0.0,
+        0.25
+      ],
+      [
+        2.6,
+        0.0,
+        0.45
+      ]
+    ]
+  },
+  "public_eval": {
+    "episode_length_seconds": 30.0,
+    "safe_command_ranges": {
+      "vx": [
+        2.1,
+        3.0
+      ],
+      "vy": [
+        -0.05,
+        0.05
+      ],
+      "yaw": [
+        -0.45,
+        0.45
+      ]
+    }
+  }
+}

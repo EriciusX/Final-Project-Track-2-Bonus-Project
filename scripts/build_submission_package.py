@@ -28,6 +28,11 @@ def parse_args() -> argparse.Namespace:
         default=ROOT / "artifacts" / "lowlevel_highspeed_finetune_v7_3p0_bridge_2m" / "best_checkpoint",
     )
     parser.add_argument(
+        "--lowlevel-config",
+        type=Path,
+        default=ROOT / "configs" / "course_config_highspeed_finetune_v7_3p0_bridge.json",
+    )
+    parser.add_argument(
         "--planner-config",
         type=Path,
         default=(
@@ -81,12 +86,15 @@ def main() -> None:
     args = parse_args()
     out = args.output_dir.resolve()
     checkpoint_dir = args.checkpoint_dir.resolve()
+    lowlevel_config_path = args.lowlevel_config.resolve()
     planner_config_path = args.planner_config.resolve()
     track_eval_dir = args.track_eval_dir.resolve()
     short_report_path = args.short_report.resolve()
 
     if not checkpoint_dir.is_dir():
         raise FileNotFoundError(f"Missing checkpoint dir: {checkpoint_dir}")
+    if not lowlevel_config_path.is_file():
+        raise FileNotFoundError(f"Missing low-level config: {lowlevel_config_path}")
     if not planner_config_path.is_file():
         raise FileNotFoundError(f"Missing planner config: {planner_config_path}")
 
@@ -101,6 +109,7 @@ def main() -> None:
     out.mkdir(parents=True, exist_ok=True)
 
     _copy_dir(checkpoint_dir, out / "best_checkpoint")
+    _copy_file(lowlevel_config_path, out / "course_config.json")
 
     planner_config = _read_json(planner_config_path)
     weights_path = planner_config.get("weights_path")
@@ -130,6 +139,7 @@ def main() -> None:
         "team_name": args.team_name,
         "track2_option": "leaderboard",
         "checkpoint_dir": "best_checkpoint",
+        "lowlevel_config": "course_config.json",
         "planner_config": "planner_config.json",
         "planner_code": "track_bonus/planner.py",
         "planner_weights": copied_weights_name,
@@ -140,7 +150,7 @@ def main() -> None:
         },
         "evaluation_command": (
             "python run_track_bonus.py --checkpoint-dir best_checkpoint "
-            "--planner-config planner_config.json --output-dir track_eval "
+            "--config course_config.json --planner-config planner_config.json --output-dir track_eval "
             "--entry-name learned_mlp_distill_v7"
         ),
         "official_results_available": official_results_available,
