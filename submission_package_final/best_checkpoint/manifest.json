@@ -1,8 +1,8 @@
 {
   "selection_method": "best_eval_reward",
-  "selected_step": 1638400,
-  "selected_eval_reward": 81.05178833007812,
-  "source_checkpoint_dir": "/mnt/d/Github_Libs/Final-Project-Track-2-Bonus-Project/artifacts/lowlevel_highspeed_finetune_v7_3p0_bridge_2m/stage_2/checkpoints/000001638400",
-  "exported_checkpoint_dir": "/mnt/d/Github_Libs/Final-Project-Track-2-Bonus-Project/artifacts/lowlevel_highspeed_finetune_v7_3p0_bridge_2m/best_checkpoint",
-  "exported_at_unix": 1780909611.4847677
+  "selected_step": 819200,
+  "selected_eval_reward": 54.68627166748047,
+  "source_checkpoint_dir": "/mnt/d/Github_Libs/Final-Project-Track-2-Bonus-Project/artifacts/lowlevel_highspeed_finetune_v9_5p0_turnmix_gpu_500k/stage_2/checkpoints/000000819200",
+  "exported_checkpoint_dir": "/mnt/d/Github_Libs/Final-Project-Track-2-Bonus-Project/artifacts/lowlevel_highspeed_finetune_v9_5p0_turnmix_gpu_500k/best_checkpoint",
+  "exported_at_unix": 1780969216.7933908
 }

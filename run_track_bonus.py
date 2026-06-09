@@ -13,6 +13,7 @@ concrete and to give students a baseline to improve.
 from __future__ import annotations
 
 import argparse
+import inspect
 import json
 import os
 from pathlib import Path
@@ -121,7 +122,6 @@ def _reset_lowlevel_on_track(
     jp = jax.numpy
     from mujoco import mjx
     from mujoco.mjx._src import math as mjmath
-    from mujoco_playground._src import mjx_env
 
     state = env.reset(rng)
     qpos = env._init_q
@@ -130,15 +130,17 @@ def _reset_lowlevel_on_track(
     quat = mjmath.axis_angle_to_quat(jp.array([0.0, 0.0, 1.0]), jp.asarray(heading, dtype=jp.float32))
     qpos = qpos.at[0:2].set(jp.asarray(xy, dtype=jp.float32))
     qpos = qpos.at[3:7].set(quat)
-    data = mjx_env.make_data(
-        env.mj_model,
-        qpos=qpos,
-        qvel=qvel,
-        ctrl=qpos[7:],
+    make_data_kwargs = dict(
         impl=env.mjx_model.impl.value,
-        naconmax=env._config.naconmax,
         njmax=env._config.njmax,
     )
+    make_data_params = inspect.signature(mjx.make_data).parameters
+    if "naconmax" in make_data_params:
+        make_data_kwargs["naconmax"] = env._config.naconmax
+    elif "nconmax" in make_data_params:
+        make_data_kwargs["nconmax"] = env._config.naconmax
+    data = mjx.make_data(env.mj_model, **make_data_kwargs)
+    data = data.replace(qpos=qpos, qvel=qvel, ctrl=qpos[7:])
     data = mjx.forward(env.mjx_model, data)
     state.info["command"] = jp.zeros(3, dtype=jp.float32)
     state.info["steps_until_next_cmd"] = jp.asarray(10**9, dtype=jp.int32)

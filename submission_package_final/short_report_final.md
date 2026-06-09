@@ -16,24 +16,24 @@ hidden layers of 64 units.
 
 ## Training
 
-The high-level MLP was trained with supervised behavior cloning, also referred
-to here as teacher-student distillation. A turn-in-apex racing-line teacher was
-used only offline to generate labels from normal high-level observations. The
-final submitted planner config is clean: at evaluation time it loads only the
-MLP weights and does not call the hand-written teacher, racing-line formula, or
-extra if-else correction logic.
+The high-level MLP was trained with DAgger-style supervised distillation. A
+turn-in-apex racing-line teacher was used only offline to generate labels from
+normal high-level observations and collected rollout states. The final submitted
+planner config is clean: at evaluation time it loads only the MLP weights and
+does not call the hand-written teacher, racing-line formula, or extra if-else
+correction logic.
 
 The final low-level checkpoint is:
 
 ```text
-artifacts/lowlevel_highspeed_finetune_v7_3p0_bridge_2m/best_checkpoint
+artifacts/lowlevel_highspeed_finetune_v9_5p0_turnmix_gpu_500k/best_checkpoint
 ```
 
 The final high-level planner is:
 
 ```text
-artifacts/highlevel_mlp_distill_turnin_apex_3p0_v1/final_clean_mlp_planner_config.json
-artifacts/highlevel_mlp_distill_turnin_apex_3p0_v1/best_planner_weights.npz
+artifacts/highlevel_mlp_dagger_straight5p0_curve4p5_yawplus2_v9test/best_planner_config.json
+artifacts/highlevel_mlp_dagger_straight5p0_curve4p5_yawplus2_v9test/best_planner_weights.npz
 ```
 
 ## Result
@@ -42,18 +42,17 @@ The final clean local official evaluation completed the 200 m track without a
 fall or boundary violation:
 
 ```text
-finish_time: 67.34 s
+finish_time: 50.18 s
 lap_completion: 1.0
 valid_distance_m: 200.0
-mean_progress_speed: 2.9700 m/s
-min_boundary_margin_m: 0.1906 m
-composite_score: 0.7923
+mean_progress_speed: 3.9857 m/s
+min_boundary_margin_m: 0.4333 m
+composite_score: 0.8332
 ```
 
 ## Notes
 
-Several faster hand-tuned or higher-speed low-level variants were tested, but
-they either failed to complete the track or became unstable near turn entry and
-exit. The submitted version was selected because it is learned at the high level,
-uses the official track geometry and observation interface, and reliably
-completes the lap at about 67 seconds.
+Several faster curve-speed variants were tested. The selected setting uses a
+5.0 m/s straight target and a 4.5 m/s curve target because it was the fastest
+stable full-lap result among the tested v9 combinations. Higher curve targets
+such as 4.9 m/s and 5.0 m/s caused falls before completing the lap.

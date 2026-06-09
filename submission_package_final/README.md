@@ -10,7 +10,7 @@ python run_track_bonus.py \
   --config submission_package_final/course_config.json \
   --planner-config submission_package_final/planner_config.json \
   --output-dir artifacts/repro_from_submission_package \
-  --entry-name learned_mlp_distill_v7 \
+  --entry-name learned_mlp_v9_fast \
   --duration-seconds 120 \
   --no-render
 ```
@@ -19,7 +19,7 @@ Expected clean evaluation result:
 
 ```text
 valid_distance_m: 200.0
-finish_time: 67.34 s
+finish_time: 50.18 s
 fall: false
 boundary_violation: false
 ```

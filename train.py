@@ -16,9 +16,11 @@ from __future__ import annotations
 
 import argparse
 import functools
+import inspect
 import json
 import os
 import time
+import traceback
 from pathlib import Path
 from typing import Any
 
@@ -94,6 +96,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--num-minibatches", type=int, default=None, help="Override PPO num_minibatches.")
     parser.add_argument("--unroll-length", type=int, default=None, help="Override PPO unroll_length.")
     parser.add_argument("--num-updates-per-batch", type=int, default=None, help="Override PPO num_updates_per_batch.")
+    parser.add_argument("--num-resets-per-eval", type=int, default=None, help="Override PPO num_resets_per_eval.")
 
     parser.add_argument("--force-cpu", action="store_true", help="Force JAX onto CPU.")
     parser.add_argument(
@@ -101,6 +104,14 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=None,
         help="Optional checkpoint directory to restore before the first selected stage.",
+    )
+    parser.add_argument(
+        "--stage2-from-scratch",
+        action="store_true",
+        help=(
+            "Debug only: allow stage_2 to train without restoring a stage_1 "
+            "checkpoint. Final leaderboard training should prefer stage_1 -> stage_2 restore."
+        ),
     )
     parser.add_argument(
         "--local-smoke",
@@ -127,6 +138,7 @@ def build_runtime_overrides(args: argparse.Namespace) -> dict[str, Any]:
                 "num_minibatches": 2,
                 "unroll_length": 10,
                 "num_updates_per_batch": 2,
+                "num_resets_per_eval": 1,
                 "stage_1_num_timesteps": 4096,
                 "stage_2_num_timesteps": 2048,
             }
@@ -158,6 +170,8 @@ def build_runtime_overrides(args: argparse.Namespace) -> dict[str, Any]:
         overrides["unroll_length"] = args.unroll_length
     if args.num_updates_per_batch is not None:
         overrides["num_updates_per_batch"] = args.num_updates_per_batch
+    if args.num_resets_per_eval is not None:
+        overrides["num_resets_per_eval"] = args.num_resets_per_eval
 
     return overrides
 
@@ -176,6 +190,8 @@ def resolve_config(args: argparse.Namespace) -> dict[str, Any]:
     config["runtime_overrides"] = build_runtime_overrides(args)
     if config["runtime_overrides"].get("force_cpu"):
         config["force_cpu"] = True
+    if args.stage2_from_scratch:
+        config["stage_2"]["restore_previous_stage_checkpoint"] = False
     return config
 
 
@@ -292,12 +308,20 @@ def run_stage(
     if randomization_fn is not None:
         train_kwargs["randomization_fn"] = randomization_fn
 
+    train_signature = inspect.signature(ppo_train)
+    if not any(param.kind == inspect.Parameter.VAR_KEYWORD for param in train_signature.parameters.values()):
+        train_kwargs = {key: value for key, value in train_kwargs.items() if key in train_signature.parameters}
+
     train_fn = functools.partial(ppo_train, **train_kwargs)
-    make_inference_fn, params, final_metrics = train_fn(
-        environment=env,
-        eval_env=eval_env,
-        progress_fn=progress_fn,
-    )
+    try:
+        make_inference_fn, params, final_metrics = train_fn(
+            environment=env,
+            eval_env=eval_env,
+            progress_fn=progress_fn,
+        )
+    except BaseException:
+        traceback.print_exc()
+        raise
     _ = make_inference_fn, params  # Explicitly show that training returned a policy.
 
     latest_checkpoint = resolve_latest_checkpoint_dir(checkpoint_root)

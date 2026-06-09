@@ -1,2 +1,2 @@
 rank,name,composite_score,lap_completion,valid_distance_m,finish_time,mean_progress_speed,fall,boundary_violation,rms_lateral_error,max_lateral_error
-1,starter,0.7922639666542742,1.0,200.0,67.34,2.97000297000297,False,False,1.2172445411155441,1.809427261352539
+1,learned_mlp_v9_fast,0.8332000942135261,1.0,200.0,50.18,3.9856516540454363,False,False,0.8933312655682275,1.5666675567626953

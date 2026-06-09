@@ -15,6 +15,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import time
 from pathlib import Path
 from typing import Any
@@ -25,7 +26,7 @@ DEFAULT_CONFIG_PATH = ROOT / "configs" / "course_config.json"
 
 
 def load_json(path: Path) -> dict[str, Any]:
-    with path.open("r", encoding="utf-8") as handle:
+    with path.open("r", encoding="utf-8-sig") as handle:
         return json.load(handle)
 
 
@@ -80,7 +81,8 @@ def detect_gpu_name() -> str | None:
 
 def set_runtime_env(*, force_cpu: bool = False) -> None:
     """Set runtime flags that make Colab runs more stable and reproducible."""
-    os.environ.setdefault("MUJOCO_GL", "egl")
+    default_mujoco_gl = "glfw" if sys.platform.startswith("win") else "egl"
+    os.environ.setdefault("MUJOCO_GL", default_mujoco_gl)
     os.environ.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
     os.environ.setdefault("JAX_DEFAULT_MATMUL_PRECISION", "highest")
     if force_cpu:
@@ -165,8 +167,15 @@ def apply_stage_config(env_cfg: Any, ppo_cfg: Any, config: dict[str, Any], stage
         env_cfg.command_config.student_stage2_goal_min = list(stage_cfg["student_stage2_goal"]["command_range"]["min"])
         env_cfg.command_config.student_stage2_goal_max = list(stage_cfg["student_stage2_goal"]["command_range"]["max"])
         env_cfg.command_config.student_stage2_goal_b = list(stage_cfg["student_stage2_goal"]["command_keep_prob"])
-    env_cfg.reward_config.scales.action_rate = float(stage_cfg["reward_scales"]["action_rate"])
-    env_cfg.reward_config.scales.energy = float(stage_cfg["reward_scales"]["energy"])
+    if "command_mixture" in stage_cfg:
+        mixture_cfg = stage_cfg["command_mixture"]
+        env_cfg.command_config.stage2_command_mixture_enable = bool(mixture_cfg.get("enable", False))
+        env_cfg.command_config.stage2_command_mixture_ranges = list(mixture_cfg["ranges"])
+        env_cfg.command_config.stage2_command_mixture_weights = list(mixture_cfg["weights"])
+    for reward_name, reward_scale in stage_cfg.get("reward_scales", {}).items():
+        if not hasattr(env_cfg.reward_config.scales, reward_name):
+            raise ValueError(f"Unknown reward scale '{reward_name}' in {stage_name}.")
+        setattr(env_cfg.reward_config.scales, reward_name, float(reward_scale))
 
     stage_steps_key = f"{stage_name}_num_timesteps"
     ppo_cfg.num_timesteps = int(runtime_overrides.get(stage_steps_key, stage_cfg["num_timesteps"]))
@@ -193,6 +202,8 @@ def apply_stage_config(env_cfg: Any, ppo_cfg: Any, config: dict[str, Any], stage
         ppo_cfg.unroll_length = int(runtime_overrides["unroll_length"])
     if "num_updates_per_batch" in runtime_overrides:
         ppo_cfg.num_updates_per_batch = int(runtime_overrides["num_updates_per_batch"])
+    if "num_resets_per_eval" in runtime_overrides:
+        ppo_cfg.num_resets_per_eval = int(runtime_overrides["num_resets_per_eval"])
 
 
 def stage_sequence(stage_arg: str) -> list[str]:
@@ -276,9 +287,7 @@ def export_selected_checkpoint(stage_dir: Path, export_dir: Path) -> dict[str, A
         }
 
     export_dir = export_dir.resolve()
-    if export_dir.exists():
-        shutil.rmtree(export_dir)
-    shutil.copytree(selected["selected_checkpoint_dir"], export_dir)
+    shutil.copytree(selected["selected_checkpoint_dir"], export_dir, dirs_exist_ok=True)
 
     manifest = {
         "selection_method": selected["selection_method"],

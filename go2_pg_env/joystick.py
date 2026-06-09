@@ -22,6 +22,7 @@ The policy outputs 12 joint offsets. The final motor target is:
 
 from __future__ import annotations
 
+import inspect
 from typing import Any, Dict, Optional, Union
 
 import jax
@@ -106,6 +107,14 @@ def default_config() -> config_dict.ConfigDict:
             student_stage2_goal_min=[-1.0, -0.4, -1.0],
             student_stage2_goal_max=[1.0, 0.4, 1.0],
             student_stage2_goal_b=[0.9, 0.25, 0.5],
+            stage2_command_mixture_enable=False,
+            # Rows are [vx_min, vy_min, yaw_min, vx_max, vy_max, yaw_max].
+            # If yaw_min and yaw_max are both non-negative, yaw is sampled as
+            # a magnitude and the sign is randomized.
+            stage2_command_mixture_ranges=[
+                [3.0, -0.03, -0.30, 5.0, 0.03, 0.30],
+            ],
+            stage2_command_mixture_weights=[1.0],
         ),
         impl="jax",
         naconmax=4 * 8192,
@@ -188,6 +197,10 @@ class Joystick(go2_base.Go2Env):
         self._student_stage2_goal_min = jp.array(self._config.command_config.student_stage2_goal_min)
         self._student_stage2_goal_max = jp.array(self._config.command_config.student_stage2_goal_max)
         self._student_stage2_goal_b = jp.array(self._config.command_config.student_stage2_goal_b)
+        self._stage2_command_mixture_enable = bool(self._config.command_config.stage2_command_mixture_enable)
+        self._stage2_command_mixture_ranges = jp.array(self._config.command_config.stage2_command_mixture_ranges)
+        mixture_weights = jp.array(self._config.command_config.stage2_command_mixture_weights)
+        self._stage2_command_mixture_weights = mixture_weights / jp.maximum(jp.sum(mixture_weights), 1e-6)
 
     def reset(self, rng: jax.Array) -> mjx_env.State:
         qpos = self._init_q
@@ -206,15 +219,17 @@ class Joystick(go2_base.Go2Env):
         rng, key = jax.random.split(rng)
         qvel = qvel.at[0:6].set(jax.random.uniform(key, (6,), minval=-0.5, maxval=0.5))
 
-        data = mjx_env.make_data(
-            self.mj_model,
-            qpos=qpos,
-            qvel=qvel,
-            ctrl=qpos[7:],
+        make_data_kwargs = dict(
             impl=self.mjx_model.impl.value,
-            naconmax=self._config.naconmax,
             njmax=self._config.njmax,
         )
+        make_data_params = inspect.signature(mjx.make_data).parameters
+        if "naconmax" in make_data_params:
+            make_data_kwargs["naconmax"] = self._config.naconmax
+        elif "nconmax" in make_data_params:
+            make_data_kwargs["nconmax"] = self._config.naconmax
+        data = mjx.make_data(self.mj_model, **make_data_kwargs)
+        data = data.replace(qpos=qpos, qvel=qvel, ctrl=qpos[7:])
         data = mjx.forward(self.mjx_model, data)
 
         rng, key1, key2, key3 = jax.random.split(rng, 4)
@@ -241,7 +256,7 @@ class Joystick(go2_base.Go2Env):
         rng, key1, key2 = jax.random.split(rng, 3)
         time_until_next_cmd = jax.random.exponential(key1) * 5.0
         steps_until_next_cmd = jp.round(time_until_next_cmd / self.dt).astype(jp.int32)
-        command = jax.random.uniform(key2, shape=(3,), minval=self._cmd_min, maxval=self._cmd_max)
+        command = self.sample_new_command(key2, jp.zeros(3))
 
         info = {
             "rng": rng,
@@ -550,28 +565,40 @@ class Joystick(go2_base.Go2Env):
         return self._cmd_min, self._cmd_max, self._cmd_b
 
     def _student_stage2_sampling_profile(self, current_command: jax.Array) -> tuple[jax.Array, jax.Array, jax.Array]:
-        """Homework seam for stage_2 command sampling.
-
-        TODO(student): keep stage_1 as the fixed forward-only baseline, and use
-        stage_2 to expand the command distribution beyond `{stand, +vx}`.
-
-        The current baseline intentionally returns the same forward-only profile
-        as stage_1, so the public benchmark still exposes missing lateral / yaw
-        capability. A good stage_2 implementation should eventually use the
-        stored `self._student_stage2_goal_*` values below.
-
-        Suggested approach:
-        1. keep the baseline forward-only ranges as the starting point
-        2. widen the stage_2 sampling range toward `self._student_stage2_goal_*`
-        3. increase the probability of non-zero `vy` and `yaw_rate` commands
-        """
+        """Use the project stage_2 goal profile for lateral and yaw tracking."""
         del current_command
-        return self._cmd_min, self._cmd_max, self._cmd_b
+        return self._student_stage2_goal_min, self._student_stage2_goal_max, self._student_stage2_goal_b
 
-    def sample_command(self, rng: jax.Array, current_command: jax.Array) -> jax.Array:
-        rng, y_rng, w_rng, z_rng = jax.random.split(rng, 4)
+    def sample_stage2_mixture_command(self, rng: jax.Array) -> jax.Array:
+        profile_rng, sample_rng, sign_rng = jax.random.split(rng, 3)
+        profile_idx = jax.random.choice(
+            profile_rng,
+            self._stage2_command_mixture_ranges.shape[0],
+            p=self._stage2_command_mixture_weights,
+        )
+        row = self._stage2_command_mixture_ranges[profile_idx]
+        cmd_min = row[:3].astype(jp.float32)
+        cmd_max = row[3:].astype(jp.float32)
+        command = jax.random.uniform(sample_rng, shape=(3,), minval=cmd_min, maxval=cmd_max)
+        yaw_abs_profile = (cmd_min[2] >= 0.0) & (cmd_max[2] >= 0.0)
+        yaw_sign = jp.where(jax.random.bernoulli(sign_rng), 1.0, -1.0)
+        command = command.at[2].set(jp.where(yaw_abs_profile, command[2] * yaw_sign, command[2]))
+        return command
+
+    def sample_new_command(self, rng: jax.Array, current_command: jax.Array) -> jax.Array:
+        if self._command_stage_name == "stage_2" and self._stage2_command_mixture_enable:
+            return self.sample_stage2_mixture_command(rng)
+        rng, y_rng, z_rng = jax.random.split(rng, 3)
         cmd_min, cmd_max, cmd_keep_prob = self._command_sampling_profile(current_command)
+        cmd_min = cmd_min.astype(jp.float32)
+        cmd_max = cmd_max.astype(jp.float32)
+        cmd_keep_prob = cmd_keep_prob.astype(jp.float32)
         candidate = jax.random.uniform(y_rng, shape=(3,), minval=cmd_min, maxval=cmd_max)
         active_mask = jax.random.bernoulli(z_rng, cmd_keep_prob, shape=(3,))
+        return candidate * active_mask
+
+    def sample_command(self, rng: jax.Array, current_command: jax.Array) -> jax.Array:
+        rng, w_rng = jax.random.split(rng)
+        candidate = self.sample_new_command(rng, current_command)
         blend_mask = jax.random.bernoulli(w_rng, 0.5, shape=(3,))
-        return current_command - blend_mask * (current_command - candidate * active_mask)
+        return current_command - blend_mask * (current_command - candidate)
