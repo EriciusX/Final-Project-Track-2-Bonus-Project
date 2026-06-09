@@ -42,17 +42,18 @@ The final clean local official evaluation completed the 200 m track without a
 fall or boundary violation:
 
 ```text
-finish_time: 50.18 s
+finish_time: 52.00 s
 lap_completion: 1.0
 valid_distance_m: 200.0
-mean_progress_speed: 3.9857 m/s
-min_boundary_margin_m: 0.4333 m
-composite_score: 0.8332
+mean_progress_speed: 3.8462 m/s
+min_boundary_margin_m: 0.4462 m
+composite_score: 0.8282
 ```
 
 ## Notes
 
 Several faster curve-speed variants were tested. The selected setting uses a
-5.0 m/s straight target and a 4.5 m/s curve target because it was the fastest
-stable full-lap result among the tested v9 combinations. Higher curve targets
-such as 4.9 m/s and 5.0 m/s caused falls before completing the lap.
+4.6 m/s straight target and a 4.0 m/s curve target because it was the fastest
+clean-worktree full-lap result selected for submission robustness. More
+aggressive settings such as 5.0/4.5 could complete in some local runs but were
+not selected because clean reproduction could fall before completing the lap.

@@ -1,6 +1,6 @@
 {
   "challenge": "track_bonus",
-  "entry_name": "learned_mlp_v9_fast",
+  "entry_name": "learned_mlp_v9_safe_final",
   "checkpoint_dir": "/mnt/d/Github_Libs/Final-Project-Track-2-Bonus-Project/submission_package_final/best_checkpoint",
   "planner_config": "/mnt/d/Github_Libs/Final-Project-Track-2-Bonus-Project/submission_package_final/planner_config.json",
   "official_track": {
@@ -11,32 +11,32 @@
   "metrics": {
     "lap_completion": 1.0,
     "valid_distance_m": 200.0,
-    "finish_time": 50.18,
-    "mean_progress_speed": 3.9856516540454363,
-    "alive_time": 50.18,
+    "finish_time": 52.0,
+    "mean_progress_speed": 3.8461538461538463,
+    "alive_time": 52.0,
     "fall": false,
-    "fall_step": 2572,
+    "fall_step": 5627,
     "boundary_violation": false,
     "boundary_violation_step": null,
-    "rms_lateral_error": 0.8933312655682275,
-    "max_lateral_error": 1.5666675567626953,
-    "min_boundary_margin_m": 0.4333324432373047,
-    "energy_proxy": 72.68617248535156,
-    "foot_slip_proxy": 4.253944396972656,
+    "rms_lateral_error": 0.9692162958450684,
+    "max_lateral_error": 1.5537643432617188,
+    "min_boundary_margin_m": 0.44623565673828125,
+    "energy_proxy": 64.06761932373047,
+    "foot_slip_proxy": 3.9941296577453613,
     "total_time": 120.0,
     "num_steps": 6000
   },
   "scores": {
     "completion_score": 1.0,
     "speed_score": 1.0,
-    "line_keeping_score": 0.41600047106763083,
+    "line_keeping_score": 0.39080774435728516,
     "stability_score": 1.0,
     "efficiency_score": 0.0,
-    "composite_score": 0.8332000942135261
+    "composite_score": 0.828161548871457
   },
   "artifacts": {
-    "leaderboard_csv": "/mnt/d/Github_Libs/Final-Project-Track-2-Bonus-Project/artifacts/repro_from_submission_package_v9_fast/leaderboard.csv",
-    "rollouts_npz": "/mnt/d/Github_Libs/Final-Project-Track-2-Bonus-Project/artifacts/repro_from_submission_package_v9_fast/race_rollouts.npz",
+    "leaderboard_csv": "/mnt/d/Github_Libs/Final-Project-Track-2-Bonus-Project/artifacts/repro_from_submission_package_v9_safe_final/leaderboard.csv",
+    "rollouts_npz": "/mnt/d/Github_Libs/Final-Project-Track-2-Bonus-Project/artifacts/repro_from_submission_package_v9_safe_final/race_rollouts.npz",
     "video_path": null
   }
 }

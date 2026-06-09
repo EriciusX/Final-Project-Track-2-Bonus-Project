@@ -16,5 +16,5 @@
   "official_results_available": true,
   "track_eval_results": "track_eval/results.json",
   "status": "complete",
-  "notes": "Final clean MLP runtime does not call the hand-written teacher or racing-line formula. Official local eval from the submission package: 200 m completed in 50.18 s, no fall, no boundary violation, min boundary margin 0.4333 m."
+  "notes": "Final clean MLP runtime does not call the hand-written teacher or racing-line formula. Local eval from the submission package: 200 m completed in 52.00 s, no fall, no boundary violation, min boundary margin 0.4462 m."
 }

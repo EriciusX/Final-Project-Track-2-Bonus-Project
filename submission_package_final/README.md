@@ -19,7 +19,7 @@ Expected clean evaluation result:
 
 ```text
 valid_distance_m: 200.0
-finish_time: 50.18 s
+finish_time: 52.00 s
 fall: false
 boundary_violation: false
 ```
