@@ -16,14 +16,24 @@ hidden layers of 64 units.
 
 ## Training
 
-The high-level MLP was trained with supervised distillation plus rollout-state
-augmentation. A turn-in-apex racing-line teacher was used only offline to
-generate labels from normal high-level observations and collected rollout
-states. This is not a full iterative DAgger loop; it is a conservative
-teacher-student distillation setup augmented with states visited by previous
-rollouts. The final submitted planner config is clean: at evaluation time it
-loads only the MLP weights and does not call the hand-written teacher,
-racing-line formula, or extra if-else correction logic.
+Before training the MLP, we built a non-learnable turn-in-apex racing-line
+teacher. This teacher was hand-designed rather than learned: it used the
+official track coordinates to place the target line outside on straights,
+inside near turn apexes, and back outside on turn exit, then converted heading
+and lateral error into `vx`, `vy`, and `yaw_rate` commands. Its parameters,
+including lookahead, inside/outside offset, straight speed, and curve speed,
+were selected by local sweep experiments.
+
+The high-level MLP was then trained with supervised distillation plus
+rollout-state augmentation. First, the non-learnable teacher labeled sampled
+official 5D track observations. Then, an intermediate MLP was rolled out on the
+track, the states it actually visited were collected, and the same teacher
+re-labeled those rollout states. The final training set combined the sampled
+states and the rollout-visited states. This is not a full iterative DAgger
+loop; it is a conservative teacher-student distillation setup augmented with
+states visited by previous rollouts. The final submitted planner config is
+clean: at evaluation time it loads only the MLP weights and does not call the
+hand-written teacher, racing-line formula, or extra if-else correction logic.
 
 The final low-level checkpoint is:
 

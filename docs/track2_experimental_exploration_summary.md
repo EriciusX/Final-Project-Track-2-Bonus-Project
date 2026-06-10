@@ -78,6 +78,15 @@ We also tested heading-angle constraints and dead zones:
 The assignment requires a learnable final method, so the final high-level
 planner was changed from hand-written racing-line logic to an MLP.
 
+Before training the MLP, we used a non-learnable turn-in-apex racing-line
+teacher as the source of supervision. This teacher was hand-designed, not
+trained. It computed a target lateral position from track progress: outside on
+straights, inward through turn entry, near the inside apex, and outward again on
+turn exit. It then converted the target-line tracking error into `vx`, `vy`,
+and `yaw_rate` commands. Its parameters, such as lookahead distance, line
+amplitude, inside/outside offsets, straight speed, and curve speed, were tuned
+through local sweep experiments.
+
 The final high-level planner:
 
 - Takes the official 5D track observation.
@@ -87,12 +96,14 @@ The final high-level planner:
 - Does not call the hand-written racing-line teacher during evaluation.
 
 The MLP was trained with supervised distillation plus rollout-state
-augmentation. A turn-in-apex racing-line teacher was used offline to generate
-labels from normal high-level observations and states collected from previous
-rollouts. This should not be described as a full multi-round DAgger loop,
-because we did not run repeated iterative cycles of rollout, expert relabeling,
-dataset aggregation, retraining, and rollout again. The teacher was only used
-for data generation, not as the runtime controller.
+augmentation. First, the teacher generated labels for sampled official 5D track
+observations. Then an intermediate MLP was rolled out on the track, and the
+states it actually visited were collected and re-labeled by the same teacher.
+The final training set combined both sampled states and rollout-visited states.
+This should not be described as a full multi-round DAgger loop, because we did
+not run repeated iterative cycles of rollout, expert relabeling, dataset
+aggregation, retraining, and rollout again. The teacher was only used for data
+generation, not as the runtime controller.
 
 ## Low-Level Speed Fine-Tuning
 
