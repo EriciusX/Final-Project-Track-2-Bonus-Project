@@ -9,7 +9,7 @@
   "high_level_planner_type": "teacher_distilled_mlp",
   "training_method": {
     "low_level": "HW1-style Go2 PPO command tracking, high-speed v9 5.0 m/s turn-mix fine-tune; actor policy_obs_key=state, state shape 48, action size 12",
-    "high_level": "DAgger-style supervised distillation: a 64x64 MLP maps the official 5D high-level observation to vx, vy, yaw_rate commands using turn-in-apex racing-line teacher labels offline only"
+    "high_level": "Supervised distillation with rollout-state augmentation: a 64x64 MLP maps the official 5D high-level observation to vx, vy, yaw_rate commands using turn-in-apex racing-line teacher labels offline only"
   },
   "evaluation_command": "python run_track_bonus.py --checkpoint-dir best_checkpoint --config course_config.json --planner-config planner_config.json --output-dir track_eval --entry-name learned_mlp_v9_fast",
   "repo_evaluation_command": "python run_track_bonus.py --checkpoint-dir submission_package_final/best_checkpoint --config submission_package_final/course_config.json --planner-config submission_package_final/planner_config.json --output-dir artifacts/repro_from_submission_package --entry-name learned_mlp_v9_fast --duration-seconds 120 --no-render",

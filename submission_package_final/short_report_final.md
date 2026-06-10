@@ -16,12 +16,14 @@ hidden layers of 64 units.
 
 ## Training
 
-The high-level MLP was trained with DAgger-style supervised distillation. A
-turn-in-apex racing-line teacher was used only offline to generate labels from
-normal high-level observations and collected rollout states. The final submitted
-planner config is clean: at evaluation time it loads only the MLP weights and
-does not call the hand-written teacher, racing-line formula, or extra if-else
-correction logic.
+The high-level MLP was trained with supervised distillation plus rollout-state
+augmentation. A turn-in-apex racing-line teacher was used only offline to
+generate labels from normal high-level observations and collected rollout
+states. This is not a full iterative DAgger loop; it is a conservative
+teacher-student distillation setup augmented with states visited by previous
+rollouts. The final submitted planner config is clean: at evaluation time it
+loads only the MLP weights and does not call the hand-written teacher,
+racing-line formula, or extra if-else correction logic.
 
 The final low-level checkpoint is:
 

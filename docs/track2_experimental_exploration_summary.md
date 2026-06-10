@@ -86,9 +86,12 @@ The final high-level planner:
 - Loads learned weights at evaluation time.
 - Does not call the hand-written racing-line teacher during evaluation.
 
-The MLP was trained with supervised distillation / DAgger-style distillation.
-A turn-in-apex racing-line teacher was used offline to generate labels from
-normal high-level observations and rollout states. The teacher was only used
+The MLP was trained with supervised distillation plus rollout-state
+augmentation. A turn-in-apex racing-line teacher was used offline to generate
+labels from normal high-level observations and states collected from previous
+rollouts. This should not be described as a full multi-round DAgger loop,
+because we did not run repeated iterative cycles of rollout, expert relabeling,
+dataset aggregation, retraining, and rollout again. The teacher was only used
 for data generation, not as the runtime controller.
 
 ## Low-Level Speed Fine-Tuning
